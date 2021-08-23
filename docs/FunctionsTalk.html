@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Some Notes on Functions</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Jeff Newmiller" />
+    <script src="FunctionsTalk_files/header-attrs-2.10/header-attrs.js"></script>
+    <link href="FunctionsTalk_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="FunctionsTalk_files/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script src="FunctionsTalk_files/htmlwidgets-1.5.3/htmlwidgets.js"></script>
+    <script src="FunctionsTalk_files/viz-1.8.2/viz.js"></script>
+    <link href="FunctionsTalk_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+    <script src="FunctionsTalk_files/grViz-binding-1.0.6.1/grViz.js"></script>
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Some Notes on Functions
+### Jeff Newmiller
+### 8/24/2021
+
+---
+
+
+
+
+## Outline
+
+- From script to function...
+- Three kinds...
+- What's in a name...
+
+---
+
+class: title-slide, middle, inverse
+
+## .center[From script to function...] 
+
+---
+
+## What is a function?
+
+In R, functions are objects containing code that can be executed to do useful things. An example of a useful function in R is the `mean` function:
+
+
+```r
+x &lt;- 1:4
+x
+```
+
+```
+## [1] 1 2 3 4
+```
+
+```r
+result &lt;- mean( x )
+result
+```
+
+```
+## [1] 2.5
+```
+
+
+<div id="htmlwidget-1c6cd687148cb5066531" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1c6cd687148cb5066531">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\nx\nresult\nnode [shape=oval]\nx -> mean [label=\"[numeric vector]\"]\nmean -> result [label=\"[length 1 vector]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+
+---
+
+## Some code to re-use
+
+Suppose you have figured out how to compute the root-sum-square of some numbers, and now you want to be able to easily apply this algorithm to new data. This particular example is intentionally very small... we will look at more involved examples later.
+
+
+```r
+y &lt;- x^2
+y
+```
+
+```
+## [1]  1  4  9 16
+```
+
+```r
+ysum &lt;- sum( y )
+ysum
+```
+
+```
+## [1] 30
+```
+
+```r
+result &lt;- sqrt( ysum )
+result
+```
+
+```
+## [1] 5.477226
+```
+
+---
+
+## Wrap your code in a function definition
+
+
+```r
+my_rss1 &lt;- function() { # first added line
+y &lt;- x^2                # untouched code
+y                       # untouched code
+ysum &lt;- sum( y )        # untouched code
+ysum                    # untouched code
+result &lt;- sqrt( ysum )  # untouched code
+result                  # untouched code - value to return
+}                       # second added line
+my_rss1()               # test the new function my_rss1
+```
+
+```
+## [1] 5.477226
+```
+
+This lets us type `my_rss1()` to do all the work of those "untouched code" lines in one short step.
+
+But one thing to notice about this is that we haven't defined any arguments yet... the code is using the `x` variable that we had defined in the global environment from earlier. This is a problem because remembering to create that variable before calling this function is hard.
+
+---
+
+## What if we forget?
+
+
+```r
+rm( x ) # What if the x variable doesn't exist?
+my_rss1() # call function again, but don't have
+          # global variable x defined
+```
+
+```
+Error in my_rss1() : object 'x' not found
+```
+
+We normally identify the outside variables we want (parameters) with internal names in the function (arguments) to make it clear what information the function needs as input...
+
+---
+
+## Adding arguments
+
+Let's indent the "untouched code" to make the end of the function easier to find, and add an `x` argument:
+
+
+```r
+my_rss2 &lt;- function( x ) { # first added line with argument
+  y &lt;- x^2                 # indented code
+  y                        # indented code
+  ysum &lt;- sum( y )         # indented code
+  ysum                     # indented code
+  result &lt;- sqrt( ysum )   # indented code
+  result                   # indented code - value to return
+}                          # end of function body
+                           # global x still missing
+my_rss2( 1:4 )             # test the new function my_rss2  ...
+```
+
+```
+## [1] 5.477226
+```
+In the call to `my_rss2( 1:4 )` we are directly specifying the input as a parameter instead of using a global variable.
+
+---
+
+## Passing parameters, receiving arguments
+
+We can define and specify a global variable, but we no longer _have to_ define it with a special name.
+
+
+```r
+x2 &lt;- 2:5
+my_rss2( x2 )
+```
+
+```
+## [1] 7.348469
+```
+In this case, `x2` is a variable outside the function, but inside the function the code thinks `x1` is called `x` because that is the first argument name.
+
+---
+
+## Returning results
+
+The result of any function is either the last expression in the function (`result` in our function) or the parameter passed to the `return()` function. In most cases it is easier to follow logic that flows all the way to the end of the function, but sometimes it is necessary to bail out in the middle of a loop or `if` statement.
+
+
+```r
+return_example &lt;- function( s ) {
+  # s is assumed to be a length-1 string
+  if ( "special" == s ) {
+    return( TRUE )
+  }
+  FALSE
+}
+return_example( "nothing special" )
+```
+
+```
+## [1] FALSE
+```
+
+```r
+return_example( "special" )
+```
+
+```
+## [1] TRUE
+```
+
+---
+
+## Side effects
+
+All of the variables normally assigned to within a function are local to that function... that is, even if there are similarly-named global variables. It is possible to modify global variables using `&lt;&lt;-` assignment, but that causes that code to be extremely "surprising" to other users or yourself in the future, so such "side effects" should really be avoided.
+
+If you have multiple answers to return, put them into a list and return the list:
+
+
+```r
+return_2_results &lt;- function( x ) {
+  y &lt;- 2 * x
+  z &lt;- x^2
+  list( result1 = y, result2 = z )
+}
+result &lt;- return_2_results( 3:5 )
+result$result1
+```
+
+```
+## [1]  6  8 10
+```
+
+```r
+result$result2
+```
+
+```
+## [1]  9 16 25
+```
+
+
+---
+
+## Testing our function 1
+
+Each time we modify our function, we risk introducing a bug that causes previously-correct results to be incorrectly-generated in our modified function. There is a way to find such problems, though, using the `testthat` package. Suppose we put our `my_rss2` function into its own file called `my_functions.R`:
+
+
+```r
+# my_functions.R
+my_rss2 &lt;- function( x ) { # first added line with argument
+  y &lt;- x^2                 # untouched code
+  y                        # untouched code
+  ysum &lt;- sum( y )         # untouched code
+  ysum                     # untouched code
+  result &lt;- sqrt( ysum )   # untouched code
+  result                   # untouched code
+}                          # end of function body
+```
+
+---
+
+## Testing our function 2
+
+We then normally use `my_rss2` from a different file, called `my_script.R`:
+
+
+```r
+# my_script.R
+source("my_functions.R")
+
+x2 &lt;- 2:5
+my_rss2( x2 )
+```
+
+where the `source` function effectively enters the function definitions in `my_functions.R` (only `my_rss2` in this case) into the global environment.
+
+---
+
+## Testing our function 3
+
+Finally, we create a file that checks certain answers that your function produces:
+
+
+```r
+# test_my_functions.R
+library(testthat)
+source( "my_functions.R" )
+
+test_that( "my_rss2", {
+  answer1 &lt;- my_rss2( 1:4 )
+  expect_equal( answer1, 5.477226, tolerance = 1e-5 )
+})
+```
+
+we can run this file whenever we make a change to my_rss2 and it will confirm that it still gives the expected answer. Ideally you would obtain this "correct" answer using something different than R (a calculator?) but at the very least you can use the first value you get back and in the future if it changes you can investigate why.
+
+---
+
+.center[![RStudio testthat support](images/test_my_functions.png)]
+
+---
+
+## Cleanup our function
+
+Typing an expression at the console prints the result, but inside a function the only place an expression on its own has an effect is on the last line of the function, so we can clean up the function a bit:
+
+
+```r
+# my_functions.R
+my_rss3 &lt;- function( x ) { # first added line with argument
+  y &lt;- x^2                 # untouched code
+  ysum &lt;- sum( y )         # untouched code
+  sqrt( ysum )             # don't bother to put the result
+                           # into a variable 
+}                          # end of function body
+```
+
+---
+
+## Testing our cleaned-up function
+
+Here I am creating a new function, but if you just edited the existing function then you could re-use the test directly:
+
+
+```r
+# test_my_functions.R
+library(testthat)
+source( "my_functions.R" )
+
+test_that( "my_rss2", {
+  answer1 &lt;- my_rss2( 1:4 )
+  expect_equal( answer1, 5.477226, tolerance = 1e-5 )
+})
+test_that( "my_rss3", {
+  answer1 &lt;- my_rss3( 1:4 )
+  expect_equal( answer1, 5.477226, tolerance = 1e-5 )
+})
+```
+
+---
+
+.center[![test results 2](images/test_my_functions2.png)]
+
+---
+
+class: title-slide, middle, inverse
+
+## .center[Three kinds...] 
+
+---
+
+## Input, analysis, and output
+
+When you have a script that you want to convert to a function, you should always try to break the script into these categories of code and convert only one kind of code section at a time. That is, if you want the functions to be re-usable:
+
+- Input functions should return data objects (usually data frames) directly corresponding to input information
+- Analysis functions should transform data objects from one kind to another (e.g. detail data frames into summary data frames); and
+- Output functions should be the only ones that produce side effects like creating new files or transmitting data to a website or displaying a plot on a screen.
+
+<div id="htmlwidget-859504b62fe29d025a43" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-859504b62fe29d025a43">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> Input [label=\"[file]\"]\nInput -> Analysis [label=\"[data.frame]\"]\nAnalysis -> Output [label=\"[list of data.frames]\"]\nOutput -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+
+
+---
+
+## Super-functions are brittle
+
+Functions that do two of or all three of these categories of work tend to be brittle and don't get re-used as much. It is very nearly as easy to enter an input function call, followed by an analysis function call, followed by an output function call, rather than invoking a super-function in one line... and the three-line version is much easier to adapt when you need to work with a different input sources (e.g. CSV, xlsx, database, web scraping, shiny interactive input, etc.) or produce a different kind of output (e.g. Rmd reports, or Excel summary files, or shiny pages, etc.).
+
+<div id="htmlwidget-73efaff9d3390fcd602a" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-73efaff9d3390fcd602a">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> \"Super-Function\" [label=\"[file]\"]\n\"Super-Function\" -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+
+---
+
+class: title-slide, middle, inverse
+
+## .center[What's in a name...] 
+
+---
+
+## Functions are objects?
+
+So functions are objects, similar to the way we have defined the `x` object. If we type `my_rss3` at the console, the R interpreter prints the object:
+
+
+```r
+my_rss3
+```
+
+```
+## function( x ) { # first added line with argument
+##   y &lt;- x^2                 # untouched code
+##   ysum &lt;- sum( y )         # untouched code
+##   sqrt( ysum )             # don't bother to put the result
+##                            # into a variable 
+## }
+```
+
+Functions that are compiled C code or S3 methods are a bit more obscure than this, but failing to type the parentheses when intending to call the function is a common source of confusion for new R users.
+
+---
+
+## Anonymous functions
+
+One thing you don't see come out when you print a function is the name of the function. In the same way the vector `1:3` could be in variable `x` or variable `z` or be typed in literally as an expression, functions don't need to know what they are called to do their job. They can be renamed:
+
+
+```r
+my_rss &lt;- my_rss3
+my_rss( 3:6 )
+```
+
+```
+## [1] 9.273618
+```
+
+or they can have no name at all:
+
+
+```r
+(function(x) sqrt(2*x) )(1:3)
+```
+
+```
+## [1] 1.414214 2.000000 2.449490
+```
+
+in which the first parenthesis is an expression defining a function but not giving it a name, followed by a pair of parentheses that cause the function to be called with a vector of numbers.
+
+---
+
+## Example of a tough input file
+
+Sometimes the built-in functions are not quite flexible enough to support reading in a file without some help. One example is CSV files with extra lines (empty or not) between the header line and the data:
+
+
+```r
+cat( paste( readLines( "data/spacy_1.csv", n = 4 )
+          , collapse = "\n"
+          )
+   )
+```
+
+```
+## X,Y
+## header info
+## 0,2.74191689429334
+## 1,-0.129396342792177
+```
+
+---
+
+## A workaround
+
+With a bit of Googling we can experiment until we create code that can read one of these files by reading the text lines into a vector, deleting the troublesome line, and then setting up a "connection" that simulates reading from a file but actually reading from the character vector. The "connection" has to be "closed" when we are done.
+
+
+```r
+lns &lt;- readLines( "data/spacy_1.csv" )
+lns &lt;- lns[ -2 ]
+connection &lt;- textConnection( lns )
+dta &lt;- read.table( connection
+                 , header = TRUE
+                 , sep = ","
+                 )
+close( connection )
+head( dta, 2 )
+```
+
+```
+##   X          Y
+## 1 0  2.7419169
+## 2 1 -0.1293963
+```
+
+---
+
+## Wrapping up the custom input function
+
+
+```r
+my_spacy_reader &lt;- function( fname ) {
+  lns &lt;- readLines( fname )
+  lns &lt;- lns[ -2 ] # removes the second element
+  connection &lt;- textConnection( lns )
+  dta &lt;- read.table( connection
+                   , header = TRUE
+                   , sep = ","
+                   )
+  close( connection )
+  dta  # have to return what we obtained after closing the connection
+}
+```
+
+With this function, all we need to give it is the name of the file to read and it returns the data in that file. This is a typical Input-type function.
+
+---
+
+## Reading all of the files 1
+
+Since we know we need to have the filenames on hand to read from, the `list.files` function is a good place to start, looking for files in the `data` directory:
+
+
+```r
+spacydata &lt;- data.frame( fname = list.files( "data" ) )
+spacydata
+```
+
+```
+##         fname
+## 1 spacy_1.csv
+## 2 spacy_2.csv
+```
+
+---
+
+## Reading all of the files 2
+
+Many people at this point will use a `for` loop to read in the files, but you can avoid the pain of keeping track of indexes by using one of the "map" techniques to apply the input function to each of the input file names in turn.
+
+<div id="htmlwidget-f47f23e00a208b843f97" style="width:600px;height:200px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-f47f23e00a208b843f97">{"x":{"diagram":"digraph function {\nrankdir = LR\nsubgraph clusterFname {\n  style=dashed\n  label=\"spacydata$fname\"\n  node [shape=none]\n  \"\\\"spacy_1.csv\\\"\"\n  \"\\\"spacy_2.csv\\\"\"\n}\nsubgraph clusterData {\n  style=dashed\n  label=\"spacydata$data\"\n  node [shape=none]\n  \"spacydata$data[[1]]\" [label=\"1201 obs. of 2 var.\"]\n  \"spacydata$data[[2]]\" [label=\"1201 obs. of 2 var.\"]\n}\nsubgraph clusterFunc {\n  style=dashed\n  label=\"rowwise/mutate/ungroup\"\n  node [shape=none]\n  \"\\\"data\\\"\"\n  node [shape=oval]\n  myspacyreader1\n  myspacyreader2\n  {\n    rank=same\n    \"\\\"data\\\"\"\n    myspacyreader1\n    myspacyreader2\n  }\n}\n\nnode [shape=oval]\nmyspacyreader1 [label=\"my_spacy_reader\"]\nmyspacyreader2 [label=\"my_spacy_reader\"]\n\"\\\"spacy_1.csv\\\"\" -> myspacyreader1 [label=\"[length 1 character]\"]\n\"\\\"spacy_2.csv\\\"\" -> myspacyreader2 [label=\"[length 1 character]\"]\n\"\\\"data\\\"\" -> myspacyreader1\n\"\\\"data\\\"\" -> myspacyreader2\nmyspacyreader1 -> \"spacydata$data[[1]]\" [label=\"[data.frame]\"]\nmyspacyreader2 -> \"spacydata$data[[2]]\" [label=\"[data.frame]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+
+---
+
+## Reading all of the files 3
+
+
+```r
+spacydata &lt;- (   spacydata
+  %&gt;% rowwise()
+  %&gt;% mutate( data = list( my_spacy_reader( file.path( "data"
+                                                     , fname ) ) )
+            )
+  %&gt;% ungroup()
+  )
+str( spacydata )
+```
+
+```
+## tibble [2 × 2] (S3: tbl_df/tbl/data.frame)
+##  $ fname: chr [1:2] "spacy_1.csv" "spacy_2.csv"
+##  $ data :List of 2
+##   ..$ :'data.frame':	1201 obs. of  2 variables:
+##   .. ..$ X: int [1:1201] 0 1 2 3 4 5 6 7 8 9 ...
+##   .. ..$ Y: num [1:1201] 2.742 -0.129 2.726 4.266 4.809 ...
+##   ..$ :'data.frame':	1201 obs. of  2 variables:
+##   .. ..$ X: int [1:1201] 0 1 2 3 4 5 6 7 8 9 ...
+##   .. ..$ Y: num [1:1201] 0.0732 2.6466 4.7594 7.7531 9.8668 ...
+```
+
+---
+
+## Checking the input by output to a plot 1
+
+The `ggplot` function likes to see all of the data in one data frame, not in nested data frames.
+
+
+```r
+(   spacydata
+%&gt;% unnest( cols = "data" )
+%&gt;% head()
+)
+```
+
+```
+## # A tibble: 6 × 3
+##   fname           X      Y
+##   &lt;chr&gt;       &lt;int&gt;  &lt;dbl&gt;
+## 1 spacy_1.csv     0  2.74 
+## 2 spacy_1.csv     1 -0.129
+## 3 spacy_1.csv     2  2.73 
+## 4 spacy_1.csv     3  4.27 
+## 5 spacy_1.csv     4  4.81 
+## 6 spacy_1.csv     5  4.79
+```
+
+---
+
+## Checking the input by output to a plot 2
+
+We can feed the unnested data into the first argument of `ggplot` using the `magrittr` pipe (`%&gt;%`):
+
+
+```r
+(   spacydata
+%&gt;% unnest( cols = "data" )
+%&gt;% ggplot( aes( x = X, y = Y, color = fname ) ) ) +
+  geom_point()
+```
+
+![](FunctionsTalk_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+---
+
+## Analysis - Quality control
+
+Quality control requires that we categorize the data records according to whether they are part of the linear slope or the constant ("clipped") section. We define a "typical" band below the maximum value of Y above which data are "Clipped", and mark each record accordingly.
+
+
+```r
+my_bent_qc &lt;- function( dta, y_break_maxfrac ) {
+  ybreak &lt;- max( dta$Y ) * y_break_maxfrac
+  dta$qc &lt;- factor( ifelse( dta$Y &lt; ybreak
+                          , "Ok"
+                          , "Clipped" )
+                  , levels = c( "Ok", "Clipped" )
+                  )
+  dta
+}
+```
+
+
+---
+
+## Analysis 2
+
+
+```r
+spacydata &lt;- (   spacydata
+             %&gt;% rowwise()
+             %&gt;% mutate( qcdata = list( my_bent_qc( data
+                                                  , 0.98 ) ) )
+             %&gt;% ungroup()
+             )
+```
+
+![](FunctionsTalk_files/figure-html/unnamed-chunk-19-1.png)&lt;!-- --&gt;
+
+---
+
+We extract the slope and offset of the linear portion, and the mean value of the constant portion for each row in `spacydata`:
+
+
+```r
+spacydata &lt;- (   spacydata
+             %&gt;% rowwise()
+             %&gt;% mutate( fit = list( lm( Y ~ X
+                                       , data = qcdata
+                                       , subset = "Ok" == qc ) )
+                       , slope = coef( fit )[ "X" ]
+                       , offset = coef( fit )[ "(Intercept)" ]
+                       , mean = with( subset( qcdata
+                                            , "Clipped" == qc )
+                                    , mean( Y )
+                                    )
+                       )
+             %&gt;% ungroup()
+             )
+(   spacydata
+%&gt;% select( fname, slope, offset, mean )
+%&gt;% as.data.frame()
+)
+```
+
+```
+##         fname     slope     offset      mean
+## 1 spacy_1.csv 0.9997434  0.0146801  899.7957
+## 2 spacy_2.csv 2.0010198 -0.1863266 1049.8882
+```
+
+---
+
+class: title-slide, middle, inverse
+
+## .center[Review] 
+
+---
+
+## Wrap-up
+
+.center[
+- Experiment interactively on a sample problem
+- Wrap up the sample code in a function definition
+- Make sure the function inputs are all defined as arguments
+- Apply functions in apply or rowwise fashion!
+]
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create();
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
