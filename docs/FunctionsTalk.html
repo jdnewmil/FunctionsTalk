@@ -5,12 +5,11 @@
     <meta charset="utf-8" />
     <meta name="author" content="Jeff Newmiller" />
     <script src="FunctionsTalk_files/header-attrs-2.10/header-attrs.js"></script>
-    <link href="FunctionsTalk_files/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <link href="FunctionsTalk_files/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
     <script src="FunctionsTalk_files/htmlwidgets-1.5.3/htmlwidgets.js"></script>
     <script src="FunctionsTalk_files/viz-1.8.2/viz.js"></script>
     <link href="FunctionsTalk_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
     <script src="FunctionsTalk_files/grViz-binding-1.0.6.1/grViz.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
@@ -18,7 +17,7 @@ class: center, middle, inverse, title-slide
 
 # Some Notes on Functions
 ### Jeff Newmiller
-### 8/24/2021
+### 9/14/2021
 
 ---
 
@@ -27,9 +26,17 @@ class: center, middle, inverse, title-slide
 
 ## Outline
 
-- From script to function...
-- Three kinds...
-- What's in a name...
+- Common questions by beginners:
+  + "I can't figure out how to make a function"
+  + "I can't figure out what should be in the function"
+
+- In pursuit of answers
+  + From script to function...
+  + Three kinds of functions...
+  + What's in a name...
+  + Getting something working
+  + Thinking in functions
+  + Review
 
 ---
 
@@ -63,8 +70,8 @@ result
 ```
 
 
-<div id="htmlwidget-1c6cd687148cb5066531" style="width:600px;height:100px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1c6cd687148cb5066531">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\nx\nresult\nnode [shape=oval]\nx -> mean [label=\"[numeric vector]\"]\nmean -> result [label=\"[length 1 vector]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-bdc66eca06342b7a2f75" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-bdc66eca06342b7a2f75">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\nx\nresult\nnode [shape=oval]\nx -> mean [label=\"[numeric vector]\"]\nmean -> result [label=\"[length 1 vector]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
@@ -74,7 +81,7 @@ Suppose you have figured out how to compute the root-sum-square of some numbers,
 
 
 ```r
-y &lt;- x^2
+y &lt;- x^2  # x defined on previous slide as 1:4
 y
 ```
 
@@ -106,14 +113,14 @@ result
 
 
 ```r
-my_rss1 &lt;- function() { # first added line
+*my_rss1 &lt;- function() { # first added line
 y &lt;- x^2                # untouched code
 y                       # untouched code
 ysum &lt;- sum( y )        # untouched code
 ysum                    # untouched code
 result &lt;- sqrt( ysum )  # untouched code
 result                  # untouched code - value to return
-}                       # second added line
+*}                       # second added line
 my_rss1()               # test the new function my_rss1
 ```
 
@@ -150,22 +157,22 @@ Let's indent the "untouched code" to make the end of the function easier to find
 
 
 ```r
-my_rss2 &lt;- function( x ) { # first added line with argument
+*my_rss2 &lt;- function( x ) { # first added line with argument
   y &lt;- x^2                 # indented code
   y                        # indented code
   ysum &lt;- sum( y )         # indented code
   ysum                     # indented code
   result &lt;- sqrt( ysum )   # indented code
   result                   # indented code - value to return
-}                          # end of function body
-                           # global x still missing
-my_rss2( 1:4 )             # test the new function my_rss2  ...
+*}                          # end of function body
+*                          # global x still missing
+my_rss2( x = 1:4 )         # test the new function my_rss2  ...
 ```
 
 ```
 ## [1] 5.477226
 ```
-In the call to `my_rss2( 1:4 )` we are directly specifying the input as a parameter instead of using a global variable.
+In the call to `my_rss2( x = 1:4 )` we are directly specifying the input as a parameter instead of using a global variable. The `x` to the left of the `=` is the name used inside the function (the argument), while the literal `1:4` is the parameter being linked up with the argument.
 
 ---
 
@@ -176,13 +183,20 @@ We can define and specify a global variable, but we no longer _have to_ define i
 
 ```r
 x2 &lt;- 2:5
-my_rss2( x2 )
+my_rss2( x = x2 )
 ```
 
 ```
 ## [1] 7.348469
 ```
 In this case, `x2` is a variable outside the function, but inside the function the code thinks `x1` is called `x` because that is the first argument name.
+
+The argument spelled out in the function call is often optional, and you often want to save the result of calling the function:
+
+
+```r
+rss &lt;- my_rss2( x2 )
+```
 
 ---
 
@@ -218,7 +232,93 @@ return_example( "special" )
 
 ## Side effects
 
-All of the variables normally assigned to within a function are local to that function... that is, even if there are similarly-named global variables. It is possible to modify global variables using `&lt;&lt;-` assignment, but that causes that code to be extremely "surprising" to other users or yourself in the future, so such "side effects" should really be avoided.
+All of the variables normally assigned to within a function are local to that function... that is, what happens in the function stays in the function even if there are similarly-named global variables. It is possible to modify global variables using `&lt;&lt;-` assignment, but that causes that code to be extremely "surprising" to other users or yourself in the future, so such "side effects" should really be avoided.
+
+
+```r
+side_effect_demo &lt;- function( delta ) {
+  x &lt;&lt;- x + delta # changes variable in enclosing environment
+}
+x &lt;- 1
+side_effect_demo( 2 ) # spaghetti code
+x
+```
+
+```
+## [1] 3
+```
+
+---
+
+## No side effects
+
+If the function does not make changes to the caller's environment then the person writing code that calls that function specifies what gets changed:
+
+
+```r
+no_side_effects_demo &lt;- function( delta ) {
+  x &lt;- x + delta # creates a local x using the global x
+  x
+}
+x
+```
+
+```
+## [1] 3
+```
+
+```r
+no_side_effects_demo( 3 )
+```
+
+```
+## [1] 6
+```
+
+```r
+x
+```
+
+```
+## [1] 3
+```
+
+This default assignment behavior allows you to re-use variable names in different functions without worrying that they will break what happens outside the code.
+
+---
+
+## Pure functions
+
+The ideal way to wrap up useful code is so you not only don't change variables outside the function, but you don't depend on variables outside the function.
+
+
+```r
+pure_function_demo &lt;- function( x, delta ) {
+  y &lt;- x + delta # creates a local y using the argument x
+  y
+}
+x &lt;- 1
+y &lt;- 7
+pure_function_demo( x = x, delta = 3 )
+```
+
+```
+## [1] 4
+```
+
+```r
+y
+```
+
+```
+## [1] 7
+```
+
+It is not always necessary to create pure functions... anonymous functions frequently directly use variables that existed before the function was created. However, pure functions are the easiest to re-use in the future.
+
+---
+
+## Returning multiple results
 
 If you have multiple answers to return, put them into a list and return the list:
 
@@ -250,7 +350,7 @@ result$result2
 
 ## Testing our function 1
 
-Each time we modify our function, we risk introducing a bug that causes previously-correct results to be incorrectly-generated in our modified function. There is a way to find such problems, though, using the `testthat` package. Suppose we put our `my_rss2` function into its own file called `my_functions.R`:
+Returning to `my_rss2` from earlier, each time we modify our function we risk introducing a bug that causes previously-correct results to be incorrectly-generated in our modified function. There is a way to find such problems, though, using the `testthat` package. Suppose we put our `my_rss2` function into its own file called `my_functions.R`:
 
 
 ```r
@@ -272,12 +372,26 @@ my_rss2 &lt;- function( x ) { # first added line with argument
 We then normally use `my_rss2` from a different file, called `my_script.R`:
 
 
+
+
 ```r
 # my_script.R
 source("my_functions.R")
 
+ls()
+```
+
+```
+## [1] "my_rss2"         "my_rss3"         "my_spacy_reader"
+```
+
+```r
 x2 &lt;- 2:5
 my_rss2( x2 )
+```
+
+```
+## [1] 7.348469
 ```
 
 where the `source` function effectively enters the function definitions in `my_functions.R` (only `my_rss2` in this case) into the global environment.
@@ -295,10 +409,12 @@ library(testthat)
 source( "my_functions.R" )
 
 test_that( "my_rss2", {
-  answer1 &lt;- my_rss2( 1:4 )
-  expect_equal( answer1, 5.477226, tolerance = 1e-5 )
+* answer1 &lt;- my_rss2( 1:4 )
+* expect_equal( answer1, 5.477226, tolerance = 1e-5 )
 })
 ```
+
+The test looks similar to a function but it is setup to make it easier for the `testthat` package to recognize and run many of these tests automatically.
 
 we can run this file whenever we make a change to my_rss2 and it will confirm that it still gives the expected answer. Ideally you would obtain this "correct" answer using something different than R (a calculator?) but at the very least you can use the first value you get back and in the future if it changes you can investigate why.
 
@@ -347,13 +463,15 @@ test_that( "my_rss3", {
 
 ---
 
+## RStudio test results
+
 .center[![test results 2](images/test_my_functions2.png)]
 
 ---
 
 class: title-slide, middle, inverse
 
-## .center[Three kinds...] 
+## .center[Three kinds of functions...] 
 
 ---
 
@@ -365,8 +483,8 @@ When you have a script that you want to convert to a function, you should always
 - Analysis functions should transform data objects from one kind to another (e.g. detail data frames into summary data frames); and
 - Output functions should be the only ones that produce side effects like creating new files or transmitting data to a website or displaying a plot on a screen.
 
-<div id="htmlwidget-859504b62fe29d025a43" style="width:600px;height:100px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-859504b62fe29d025a43">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> Input [label=\"[file]\"]\nInput -> Analysis [label=\"[data.frame]\"]\nAnalysis -> Output [label=\"[list of data.frames]\"]\nOutput -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-db0d76e93d067b2e2c7e" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-db0d76e93d067b2e2c7e">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> Input [label=\"[file]\"]\nInput -> Analysis [label=\"[data.frame]\"]\nAnalysis -> Output [label=\"[list of data.frames]\"]\nOutput -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 
 ---
@@ -375,8 +493,8 @@ When you have a script that you want to convert to a function, you should always
 
 Functions that do two of or all three of these categories of work tend to be brittle and don't get re-used as much. It is very nearly as easy to enter an input function call, followed by an analysis function call, followed by an output function call, rather than invoking a super-function in one line... and the three-line version is much easier to adapt when you need to work with a different input sources (e.g. CSV, xlsx, database, web scraping, shiny interactive input, etc.) or produce a different kind of output (e.g. Rmd reports, or Excel summary files, or shiny pages, etc.).
 
-<div id="htmlwidget-73efaff9d3390fcd602a" style="width:600px;height:100px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-73efaff9d3390fcd602a">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> \"Super-Function\" [label=\"[file]\"]\n\"Super-Function\" -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-a435a0994ad1a27670f2" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-a435a0994ad1a27670f2">{"x":{"diagram":"digraph function {\nrankdir = LR\nnode [shape=none]\n\"data.xlsx\"\n\"result.docx\"\nnode [shape=oval]\n\"data.xlsx\" -> \"Super-Function\" [label=\"[file]\"]\n\"Super-Function\" -> \"result.docx\" [label=\"[file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
@@ -388,7 +506,7 @@ class: title-slide, middle, inverse
 
 ## Functions are objects?
 
-So functions are objects, similar to the way we have defined the `x` object. If we type `my_rss3` at the console, the R interpreter prints the object:
+Yes, functions are objects in R, similar to the way we have defined the `x` object. If we type `my_rss3` at the console, the R interpreter prints the object:
 
 
 ```r
@@ -404,7 +522,7 @@ my_rss3
 ## }
 ```
 
-Functions that are compiled C code or S3 methods are a bit more obscure than this, but failing to type the parentheses when intending to call the function is a common source of confusion for new R users.
+Functions that are compiled C code or S3 methods print out a bit more obscurely than this, but failing to type the parentheses when intending to call the function is a common source of confusion for new R users, so at least you know the difference between using parentheses (call the function) and not using them (print the function definition).
 
 ---
 
@@ -437,6 +555,12 @@ in which the first parenthesis is an expression defining a function but not givi
 
 ---
 
+class: title-slide, middle, inverse
+
+## .center[Getting something working]
+
+---
+
 ## Example of a tough input file
 
 Sometimes the built-in functions are not quite flexible enough to support reading in a file without some help. One example is CSV files with extra lines (empty or not) between the header line and the data:
@@ -465,7 +589,7 @@ With a bit of Googling we can experiment until we create code that can read one 
 
 ```r
 lns &lt;- readLines( "data/spacy_1.csv" )
-lns &lt;- lns[ -2 ]
+*lns &lt;- lns[ -2 ] # remove the second line in memory
 connection &lt;- textConnection( lns )
 dta &lt;- read.table( connection
                  , header = TRUE
@@ -480,14 +604,101 @@ head( dta, 2 )
 ## 1 0  2.7419169
 ## 2 1 -0.1293963
 ```
+.footnote[e.g. [Using `readLines`/`textConnection` to adapt input data ](https://stackoverflow.com/questions/23305128/read-csv-with-variable-rows-to-skip-bulk)]
 
 ---
 
-## Wrapping up the custom input function
+## Look at the data
+
+![](FunctionsTalk_files/figure-html/spacyplot1-1.png)&lt;!-- --&gt;
+
+The data has two linear sections... assume that for now we would like to identify the slope of the sloped segment and the mean value of the horizontal segment.
+
+---
+
+## Categorize data points
+
+There are sometimes different underlying operating modes reflected in the data that require categorization of the data records. In this case, we need to mark the records according to whether they are part of the linear slope or the constant ("clipped") section. 
 
 
 ```r
-my_spacy_reader &lt;- function( fname ) {
+ybreak &lt;- 0.98 * max( dta$Y )
+ybreak
+```
+
+```
+## [1] 888.8508
+```
+
+```r
+dta$segment &lt;- ifelse( ybreak &lt; dta$Y, "Horizontal", "Sloped" )
+```
+
+![](FunctionsTalk_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+
+---
+
+## Compute desired estimates
+
+In R, the key information can be extracted from the data using functions that happen to be available in the standard R distribution for this example but could be from contributed packages.
+
+
+```r
+slope_fit &lt;- lm( Y ~ X, data = dta, subset = "Sloped" == segment )
+slope_coefs &lt;- coef( slope_fit )
+Slope &lt;- as.vector( slope_coefs[ "X" ] )
+Offset &lt;- as.vector( slope_coefs[ "(Intercept)" ] )
+Mean &lt;- mean( dta$Y[ "Horizontal" == dta$segment ] )
+result &lt;- data.frame( Slope = Slope, Offset = Offset, Mean = Mean )
+result
+```
+
+```
+##       Slope    Offset     Mean
+## 1 0.9997434 0.0146801 899.7957
+```
+
+---
+
+## A copy-paste solution
+
+(View `two-file-analysis_1.R`)
+
+If you need to analyze two files this way and produce a single output summary file, a common approach is to copy-paste the above solutions. This can be tricky to adapt when needed... variable names may be re-used if you are not confused by this, or changed if you want to be clear about which data came from where.
+
+---
+
+class: title-slide, middle, inverse
+
+## .center[Thinking in functions]
+
+---
+
+## `my_spacy_reader`
+
+What if we only have to keep one copy of the file reading code and re-use it?
+
+Just think of that sequence of steps as one "outline" step with an input (filename) and an output (a data frame):
+
+<div id="htmlwidget-8ada9ed4f9cd81b531fd" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-8ada9ed4f9cd81b531fd">{"x":{"diagram":"digraph input_function {\nrankdir = LR\nnode [shape=none]\nfname [label=\"\\\"data/spacy_1.csv\\\"\"]\nresult\nnode [shape=oval]\nfname -> my_spacy_reader [label=\"[string]\"]\nmy_spacy_reader -> result [label=\"[dataframe]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+
+We would like to be able to "get this done" in one statement like:
+
+```{}
+result &lt;- my_spacy_reader( fname = "data/spacy_1.csv" )
+```
+
+
+---
+
+## Custom csv input as a function
+
+Adding the usual function-wrapper code and return value at the end of the function:
+
+
+```r
+*my_spacy_reader &lt;- function( fname ) {
   lns &lt;- readLines( fname )
   lns &lt;- lns[ -2 ] # removes the second element
   connection &lt;- textConnection( lns )
@@ -496,176 +707,105 @@ my_spacy_reader &lt;- function( fname ) {
                    , sep = ","
                    )
   close( connection )
-  dta  # have to return what we obtained after closing the connection
-}
+* dta  # have to return what we obtained
+*      # after closing the connection
+*} 
 ```
 
-With this function, all we need to give it is the name of the file to read and it returns the data in that file. This is a typical Input-type function.
 
 ---
 
-## Reading all of the files 1
+## Results collection
 
-Since we know we need to have the filenames on hand to read from, the `list.files` function is a good place to start, looking for files in the `data` directory:
+Sometimes you need to pull results from various places into a single location. This is a kind of analysis step that organizes data for output.
 
 
 ```r
-spacydata &lt;- data.frame( fname = list.files( "data" ) )
-spacydata
-```
-
-```
-##         fname
-## 1 spacy_1.csv
-## 2 spacy_2.csv
-```
-
----
-
-## Reading all of the files 2
-
-Many people at this point will use a `for` loop to read in the files, but you can avoid the pain of keeping track of indexes by using one of the "map" techniques to apply the input function to each of the input file names in turn.
-
-<div id="htmlwidget-f47f23e00a208b843f97" style="width:600px;height:200px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-f47f23e00a208b843f97">{"x":{"diagram":"digraph function {\nrankdir = LR\nsubgraph clusterFname {\n  style=dashed\n  label=\"spacydata$fname\"\n  node [shape=none]\n  \"\\\"spacy_1.csv\\\"\"\n  \"\\\"spacy_2.csv\\\"\"\n}\nsubgraph clusterData {\n  style=dashed\n  label=\"spacydata$data\"\n  node [shape=none]\n  \"spacydata$data[[1]]\" [label=\"1201 obs. of 2 var.\"]\n  \"spacydata$data[[2]]\" [label=\"1201 obs. of 2 var.\"]\n}\nsubgraph clusterFunc {\n  style=dashed\n  label=\"rowwise/mutate/ungroup\"\n  node [shape=none]\n  \"\\\"data\\\"\"\n  node [shape=oval]\n  myspacyreader1\n  myspacyreader2\n  {\n    rank=same\n    \"\\\"data\\\"\"\n    myspacyreader1\n    myspacyreader2\n  }\n}\n\nnode [shape=oval]\nmyspacyreader1 [label=\"my_spacy_reader\"]\nmyspacyreader2 [label=\"my_spacy_reader\"]\n\"\\\"spacy_1.csv\\\"\" -> myspacyreader1 [label=\"[length 1 character]\"]\n\"\\\"spacy_2.csv\\\"\" -> myspacyreader2 [label=\"[length 1 character]\"]\n\"\\\"data\\\"\" -> myspacyreader1\n\"\\\"data\\\"\" -> myspacyreader2\nmyspacyreader1 -> \"spacydata$data[[1]]\" [label=\"[data.frame]\"]\nmyspacyreader2 -> \"spacydata$data[[2]]\" [label=\"[data.frame]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
-
----
-
-## Reading all of the files 3
-
-
-```r
-spacydata &lt;- (   spacydata
-  %&gt;% rowwise()
-  %&gt;% mutate( data = list( my_spacy_reader( file.path( "data"
-                                                     , fname ) ) )
-            )
-  %&gt;% ungroup()
-  )
-str( spacydata )
-```
-
-```
-## tibble [2 × 2] (S3: tbl_df/tbl/data.frame)
-##  $ fname: chr [1:2] "spacy_1.csv" "spacy_2.csv"
-##  $ data :List of 2
-##   ..$ :'data.frame':	1201 obs. of  2 variables:
-##   .. ..$ X: int [1:1201] 0 1 2 3 4 5 6 7 8 9 ...
-##   .. ..$ Y: num [1:1201] 2.742 -0.129 2.726 4.266 4.809 ...
-##   ..$ :'data.frame':	1201 obs. of  2 variables:
-##   .. ..$ X: int [1:1201] 0 1 2 3 4 5 6 7 8 9 ...
-##   .. ..$ Y: num [1:1201] 0.0732 2.6466 4.7594 7.7531 9.8668 ...
-```
-
----
-
-## Checking the input by output to a plot 1
-
-The `ggplot` function likes to see all of the data in one data frame, not in nested data frames.
-
-
-```r
-(   spacydata
-%&gt;% unnest( cols = "data" )
-%&gt;% head()
-)
-```
-
-```
-## # A tibble: 6 × 3
-##   fname           X      Y
-##   &lt;chr&gt;       &lt;int&gt;  &lt;dbl&gt;
-## 1 spacy_1.csv     0  2.74 
-## 2 spacy_1.csv     1 -0.129
-## 3 spacy_1.csv     2  2.73 
-## 4 spacy_1.csv     3  4.27 
-## 5 spacy_1.csv     4  4.81 
-## 6 spacy_1.csv     5  4.79
-```
-
----
-
-## Checking the input by output to a plot 2
-
-We can feed the unnested data into the first argument of `ggplot` using the `magrittr` pipe (`%&gt;%`):
-
-
-```r
-(   spacydata
-%&gt;% unnest( cols = "data" )
-%&gt;% ggplot( aes( x = X, y = Y, color = fname ) ) ) +
-  geom_point()
-```
-
-![](FunctionsTalk_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
-
----
-
-## Analysis - Quality control
-
-Quality control requires that we categorize the data records according to whether they are part of the linear slope or the constant ("clipped") section. We define a "typical" band below the maximum value of Y above which data are "Clipped", and mark each record accordingly.
-
-
-```r
-my_bent_qc &lt;- function( dta, y_break_maxfrac ) {
-  ybreak &lt;- max( dta$Y ) * y_break_maxfrac
-  dta$qc &lt;- factor( ifelse( dta$Y &lt; ybreak
-                          , "Ok"
-                          , "Clipped" )
-                  , levels = c( "Ok", "Clipped" )
+*my_collect_results &lt;- function( result1, result_label1
+*                             , result2, result_label2 ) {
+  results &lt;- rbind( cbind( Source = result_label1
+                         , result1
+                         )
+                  , cbind( Source = result_label2
+                         , result2
+                         )
                   )
-  dta
-}
+* results
+*} 
 ```
 
+<div id="htmlwidget-8f47b0912f7b8eee63c2" style="width:600px;height:100px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-8f47b0912f7b8eee63c2">{"x":{"diagram":"digraph collect_function {\nrankdir = LR\nnode [shape=none]\nresult1\nresult2\nresult_label1\nresult_label2\nresults\nnode [shape=oval]\nresult1 -> my_collect_results [label=\"[data.frame]\"]\nresult2 -> my_collect_results [label=\"[data.frame]\"]\nresult_label1 -> my_collect_results [label=\"[data.frame]\"]\nresult_label2 -> my_collect_results [label=\"[data.frame]\"]\nmy_collect_results -> results [label=\"[data.frame]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
-## Analysis 2
+## Top-level diagram
 
-
-```r
-spacydata &lt;- (   spacydata
-             %&gt;% rowwise()
-             %&gt;% mutate( qcdata = list( my_bent_qc( data
-                                                  , 0.98 ) ) )
-             %&gt;% ungroup()
-             )
-```
-
-![](FunctionsTalk_files/figure-html/unnamed-chunk-19-1.png)&lt;!-- --&gt;
+<div id="htmlwidget-058ab65c3513f6feb572" style="width:400px;height:500px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-058ab65c3513f6feb572">{"x":{"diagram":"digraph analysis_function {\n#rankdir = LR\n\nnode [shape=none]\nin_csv_file_1 [label=\"\\\"spacy_1.csv\\\"\"]\nin_csv_file_2 [label=\"\\\"spacy_2.csv\\\"\"]\ncsv_file [label=\"two-file-results_2.csv\"]\n\nnode [shape=oval]\n\"my_spacy_reader.A\" [label=\"my_spacy_reader\"]\n\"my_spacy_reader.B\" [label=\"my_spacy_reader\"]\n\"my_bent_qc.A\" [label=\"my_bent_qc\"]\n\"my_bent_qc.B\" [label=\"my_bent_qc\"]\n\"my_analysis.A\" [label=\"my_analysis\"]\n\"my_analysis.B\" [label=\"my_analysis\"]\nin_csv_file_1 -> \"my_spacy_reader.A\" [label=\"[file name]\"]\nin_csv_file_2 -> \"my_spacy_reader.B\" [label=\"[file name]\"]\n\"my_spacy_reader.A\" -> \"my_bent_qc.A\" [label=\"[data.frame]\"]\n\"my_spacy_reader.B\" -> \"my_bent_qc.B\" [label=\"[data.frame]\"]\n\"my_bent_qc.A\" -> \"my_analysis.A\" [label=\"[data.frame]\"]\n\"my_bent_qc.B\" -> \"my_analysis.B\" [label=\"[data.frame]\"]\n\"my_analysis.A\" -> my_collect_results [label=\"[data.frame]\"]\n\"my_analysis.B\" -> my_collect_results [label=\"[data.frame]\"]\nin_csv_file_1 -> my_collect_results\nin_csv_file_2 -> my_collect_results\nmy_collect_results -> my_write_results [label=\"[data.frame]\"]\nmy_write_results -> csv_file [label=\"[csv file]\"]\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
-We extract the slope and offset of the linear portion, and the mean value of the constant portion for each row in `spacydata`:
+## Top-level code
 
 
 ```r
-spacydata &lt;- (   spacydata
-             %&gt;% rowwise()
-             %&gt;% mutate( fit = list( lm( Y ~ X
-                                       , data = qcdata
-                                       , subset = "Ok" == qc ) )
-                       , slope = coef( fit )[ "X" ]
-                       , offset = coef( fit )[ "(Intercept)" ]
-                       , mean = with( subset( qcdata
-                                            , "Clipped" == qc )
-                                    , mean( Y )
-                                    )
-                       )
-             %&gt;% ungroup()
-             )
-(   spacydata
-%&gt;% select( fname, slope, offset, mean )
-%&gt;% as.data.frame()
-)
+source( "two-file-analysis_funcs.R" )
+y_break_maxfrac &lt;- 0.98
+# First dataset ----
+raw_dta_1 &lt;- my_spacy_reader( "data/spacy_1.csv" )
+labelled_dta_1 &lt;- my_bent_qc( dta = raw_dta_1
+                            , y_break_maxfrac = y_break_maxfrac
+                            )
+result_1 &lt;- my_analysis( labelled_dta_1 )
+# Second dataset ----
+raw_dta_2 &lt;- my_spacy_reader( "data/spacy_2.csv" )
+labelled_dta_2 &lt;- my_bent_qc( dta = raw_dta_2
+                            , y_break_maxfrac = y_break_maxfrac
+                            )
+result_2 &lt;- my_analysis( labelled_dta_2 )
+# Combine results ----
+results &lt;- my_collect_results( result1 = result_1
+                             , result_label1 = "spacy_1.csv"
+                             , result2 = result_2
+                             , result_label2 = "spacy_2.csv" )
+# Write results to csv ----
+my_write_results( results = results
+                , file = "two-file-results_2.csv"
+                )
 ```
 
+---
+
+## Pipelined version
+
+
+```r
+source( "two-file-analysis_funcs.R" )
+y_break_maxfrac &lt;- 0.98
+# First dataset ----
+result_1 &lt;- (   "data/spacy_1.csv"
+            |&gt; my_spacy_reader()
+            |&gt; my_bent_qc( y_break_maxfrac = y_break_maxfrac )
+            |&gt; my_analysis()
+            )
+# Second dataset ----
+result_2 &lt;- (   "data/spacy_1.csv"
+            |&gt; my_spacy_reader()
+            |&gt; my_bent_qc( y_break_maxfrac = y_break_maxfrac )
+            |&gt; my_analysis()
+            )
+# Combine results ----
+results &lt;- my_collect_results( result1 = result_1
+                             , result_label1 = "spacy_1.csv"
+                             , result2 = result_2
+                             , result_label2 = "spacy_2.csv" )
+# Write results to csv ----
+my_write_results( results = results
+                , file = "two-file-results_3.csv"
+                )
 ```
-##         fname     slope     offset      mean
-## 1 spacy_1.csv 0.9997434  0.0146801  899.7957
-## 2 spacy_2.csv 2.0010198 -0.1863266 1049.8882
-```
+
 
 ---
 
@@ -677,17 +817,23 @@ class: title-slide, middle, inverse
 
 ## Wrap-up
 
-.center[
 - Experiment interactively on a sample problem
-- Wrap up the sample code in a function definition
+- Separate the sample code into input, analysis or output categories
+- Wrap up input/analysis/output sections into separate function definitions
 - Make sure the function inputs are all defined as arguments
-- Apply functions in apply or rowwise fashion!
-]
+- Put the function in a separate "functions" script
+- Call the function (e.g. from your top-level script)
+- Enjoy your short(er) code!
+
+.footnote[[Code associated with this presentation](https://github.com/jdnewmil/FunctionsTalk)]
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
-<script>var slideshow = remark.create();
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"highlightSpans": true
+});
 if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   window.dispatchEvent(new Event('resize'));
 });
@@ -752,7 +898,24 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
       links[i].target = '_blank';
     }
   }
-})();</script>
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
 
 <script>
 slideshow._releaseMath = function(el) {

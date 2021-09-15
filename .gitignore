@@ -4,3 +4,5 @@
 .Ruserdata
 presentation/*.html
 presentation/FunctionsTalk_files
+presentation/xaringan-themer.css
+/*.csv
